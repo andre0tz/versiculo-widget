@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Versículo del Día</title>
+
+  <!-- ============================================================
+       FUENTES: Cormorant Garamond (display elegante) + Nunito (cuerpo)
+       Descargadas desde Google Fonts — requiere conexión a internet
+  ============================================================ -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Nunito:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ============================================================
+       VARIABLES CSS — aquí puedes cambiar todos los colores y fuentes
+       con un solo lugar de edición.
+       Para modo oscuro, los valores se redefinen dentro de @media.
+    ============================================================ */
+    :root {
+      /* Paleta modo claro — fondo blanco, azul Notion #2383E2 */
+      --bg:              #FFFFFF;
+      --card-bg:         #FFFFFF;
+      --card-border:     rgba(35,131,226,0.15);
+      --accent:          #2383E2;
+      --accent-light:    #E7F3FD;
+      --accent-text:     #1A6BB5;
+      --text-primary:    #1A1A1A;
+      --text-secondary:  #555555;
+      --text-tertiary:   #999999;
+      --divider:         rgba(35,131,226,0.12);
+      --btn-bg:          #2383E2;
+      --btn-text:        #FFFFFF;
+      --btn-hover-bg:    #1A6BB5;
+      --shadow:          none;
+
+      /* Tipografía */
+      --font-display:    'Cormorant Garamond', Georgia, serif;
+      --font-body:       'Nunito', system-ui, sans-serif;
+
+      /* Layout — compacto para columna lateral de Notion */
+      --radius:          14px;
+      --max-width:       320px;
+    }
+
+    /* ============================================================
+       MODO OSCURO — se activa automáticamente según el sistema operativo
+    ============================================================ */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:              #000000;
+        --card-bg:         #000000;
+        --card-border:     rgba(35,131,226,0.20);
+        --accent:          #2383E2;
+        --accent-light:    rgba(35,131,226,0.15);
+        --accent-text:     #6DB8F5;
+        --text-primary:    #FFFFFF;
+        --text-secondary:  #AAAAAA;
+        --text-tertiary:   #555555;
+        --divider:         rgba(35,131,226,0.15);
+        --btn-bg:          #2383E2;
+        --btn-text:        #FFFFFF;
+        --btn-hover-bg:    #1A6BB5;
+        --shadow:          none;
+      }
+    }
+
+    /* ============================================================
+       RESET Y BASE
+    ============================================================ */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem 0.5rem;
+      /* Transición suave al cambiar de modo */
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    /* ============================================================
+       CONTENEDOR PRINCIPAL
+    ============================================================ */
+    .widget {
+      width: 100%;
+      max-width: var(--max-width);
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 1.4rem 1.25rem;
+      box-shadow: var(--shadow);
+      transition: background 0.3s ease, border-color 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Ornamento decorativo de fondo — cruz sutilísima */
+    .widget::before {
+      content: '✝';
+      position: absolute;
+      top: -10px;
+      right: 16px;
+      font-size: 80px;
+      color: var(--accent);
+      opacity: 0.04;
+      font-family: var(--font-display);
+      line-height: 1;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    /* ============================================================
+       ENCABEZADO — etiqueta "Versículo del Día" + fecha
+    ============================================================ */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .label {
+      font-family: var(--font-body);
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .date {
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
+      font-weight: 500;
+    }
+
+    /* ============================================================
+       ZONA DE CARGA / ERROR — estados mientras se obtiene el versículo
+    ============================================================ */
+    .state-message {
+      text-align: center;
+      padding: 2rem 0;
+      color: var(--text-tertiary);
+      font-size: 0.9rem;
+    }
+
+    /* Animación del loader (tres puntos pulsantes) */
+    .loader {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 2rem 0;
+    }
+
+    .loader span {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      opacity: 0.4;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    .loader span:nth-child(2) { animation-delay: 0.2s; }
+    .loader span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes pulse {
+      0%, 80%, 100% { opacity: 0.4; transform: scale(0.85); }
+      40%            { opacity: 1;   transform: scale(1); }
+    }
+
+    /* ============================================================
+       CONTENIDO DEL VERSÍCULO
+    ============================================================ */
+    .verse-content {
+      /* Animación de entrada al cargar */
+      animation: fadeIn 0.6s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Comilla decorativa de apertura */
+    .quote-mark {
+      font-family: var(--font-display);
+      font-size: 2.5rem;
+      color: var(--accent);
+      opacity: 0.35;
+      line-height: 0.6;
+      margin-bottom: 0.35rem;
+      display: block;
+    }
+
+    /* Texto del versículo — tipografía display elegante */
+    .verse-text {
+      font-family: var(--font-display);
+      font-size: clamp(1.1rem, 3vw, 1.35rem);
+      font-style: italic;
+      font-weight: 400;
+      line-height: 1.6;
+      color: var(--text-primary);
+      margin-bottom: 1rem;
+    }
+
+    /* Badge con la referencia bíblica */
+    .reference {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--accent-light);
+      color: var(--accent-text);
+      padding: 0.28rem 0.7rem;
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      font-family: var(--font-body);
+      letter-spacing: 0.03em;
+      margin-bottom: 1.1rem;
+    }
+
+    /* Ícono de libro junto a la referencia */
+    .reference::before {
+      content: '📖';
+      font-size: 0.9rem;
+    }
+
+    /* Divisor decorativo */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--divider);
+      margin: 0 0 1rem;
+    }
+
+    /* ============================================================
+       REFLEXIÓN INSPIRADORA
+    ============================================================ */
+    .reflection-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+
+    .reflection-text {
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      line-height: 1.7;
+      color: var(--text-secondary);
+      font-style: normal;
+    }
+
+    /* ============================================================
+       BOTÓN "OTRO VERSÍCULO"
+    ============================================================ */
+    .footer {
+      margin-top: 1.25rem;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .btn-refresh {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--btn-bg);
+      color: var(--btn-text);
+      border: none;
+      border-radius: 100px;
+      padding: 0.45rem 0.9rem;
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.15s ease;
+      letter-spacing: 0.02em;
+    }
+
+    .btn-refresh:hover  { background: var(--btn-hover-bg); }
+    .btn-refresh:active { transform: scale(0.97); }
+
+    /* Ícono de flecha circular en el botón */
+    .btn-refresh svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+
+    /* Estado "cargando" del botón — deshabilitar mientras se obtiene */
+    .btn-refresh:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ============================================================
+       RESPONSIVE — ajustes para pantallas muy pequeñas
+    ============================================================ */
+    @media (max-width: 420px) {
+      .widget       { padding: 1.75rem 1.25rem; }
+      .verse-text   { font-size: 1.2rem; }
+      .quote-mark   { font-size: 3rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Contenedor principal del widget -->
+  <div class="widget" id="widget" role="main" aria-label="Versículo del Día">
+
+    <!-- Encabezado con etiqueta y fecha actual -->
+    <div class="header">
+      <span class="label">✦ Versículo del Día</span>
+      <span class="date" id="todayDate"></span>
+    </div>
+
+    <!-- Estado inicial: loader mientras se obtiene el versículo -->
+    <div class="loader" id="loader" aria-live="polite" aria-label="Cargando versículo">
+      <span></span><span></span><span></span>
+    </div>
+
+    <!-- Contenido del versículo — oculto hasta que cargue -->
+    <div class="verse-content" id="verseContent" style="display:none;">
+      <span class="quote-mark" aria-hidden="true">"</span>
+      <p class="verse-text"  id="verseText"></p>
+      <span class="reference" id="verseRef"></span>
+      <hr class="divider" />
+      <p class="reflection-label">Reflexión</p>
+      <p class="reflection-text" id="reflection"></p>
+    </div>
+
+    <!-- Mensaje de error — oculto a menos que falle la API -->
+    <div id="errorMsg" class="state-message" style="display:none;" role="alert">
+      No se pudo cargar el versículo. Por favor intenta de nuevo.
+    </div>
+
+    <!-- Botón para obtener otro versículo manualmente -->
+    <div class="footer">
+      <button class="btn-refresh" id="btnRefresh" onclick="loadNewVerse()" title="Obtener otro versículo">
+        <!-- Ícono SVG de flecha circular (refresh) sin dependencias externas -->
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <polyline points="1 4 1 10 7 10"></polyline>
+          <path d="M3.51 15a9 9 0 1 0 .49-4.95"></path>
+        </svg>
+        Otro versículo
+      </button>
+    </div>
+
+  </div>
+
+
+
+  <!-- ============================================================
+       JAVASCRIPT — toda la lógica del widget
+  ============================================================ -->
+  <script>
+    /* ============================================================
+       CONFIGURACIÓN GENERAL
+       Cambia aquí el comportamiento del widget.
+    ============================================================ */
+    const CONFIG = {
+      // Clave de API de api.bible (gratuita — regístrate en scripture.api.bible)
+      // Esta clave de demostración puede tener límite de peticiones.
+      // REEMPLAZA por la tuya en: https://scripture.api.bible/signup
+      apiKey: 'a0f18b1ac0f30bc7e1f77d0fe5d89a64',
+
+      // ID de la Biblia en español (NVI) en api.bible
+      // Puedes buscar otros IDs en: https://scripture.api.bible/livedocs#/Bibles/getBibles
+      bibleId: '592420522e16049f-01',
+
+      // Prefijo de la clave en localStorage — se añade la fecha para que cambie cada día
+      storageKey: 'verseOfDay_',
+
+      // Versículos favoritos a los que recurrir si la API falla (fallback offline)
+      // Formato: { ref: 'Libro C:V', text: '...', reflection: '...' }
+      fallback: [
+        {
+          ref: 'Filipenses 4:13',
+          text: 'Todo lo puedo en Cristo que me fortalece.',
+          reflection: 'Con fe genuina, cada obstáculo se convierte en un peldaño hacia lo que Dios tiene para ti.'
+        },
+        {
+          ref: 'Jeremías 29:11',
+          text: 'Porque yo sé los planes que tengo para ustedes, planes de bienestar y no de calamidad, para darles un futuro y una esperanza.',
+          reflection: 'Incluso en la incertidumbre, los planes de Dios sobre tu vida son perfectos e inquebrantables.'
+        },
+        {
+          ref: 'Salmos 23:1',
+          text: 'El Señor es mi pastor, nada me faltará.',
+          reflection: 'Bajo el cuidado de Dios, la provisión no es una promesa futura — es una realidad presente.'
+        },
+        {
+          ref: 'Romanos 8:28',
+          text: 'Ahora bien, sabemos que Dios dispone todas las cosas para el bien de quienes lo aman, los que han sido llamados de acuerdo con su propósito.',
+          reflection: 'Nada en tu historia es accidental; Dios teje cada momento hacia un propósito mayor.'
+        },
+        {
+          ref: 'Isaías 40:31',
+          text: 'Pero los que confían en el Señor renovarán sus fuerzas; volarán como las águilas, correrán y no se fatigarán, caminarán y no se cansarán.',
+          reflection: 'La espera en Dios no es pasividad — es la recarga espiritual que antecede el vuelo más alto.'
+        },
+        {
+          ref: 'Mateo 11:28',
+          text: 'Vengan a mí todos ustedes que están cansados y agobiados, y yo les daré descanso.',
+          reflection: 'El descanso más profundo no viene del silencio, sino de rendirse en los brazos de Cristo.'
+        },
+        {
+          ref: 'Josué 1:9',
+          text: 'Ya te lo he ordenado: ¡Sé fuerte y valiente! ¡No tengas miedo ni te desanimes! Porque el Señor tu Dios te acompañará dondequiera que vayas.',
+          reflection: 'El valor no surge de la ausencia de temor, sino de la certeza de que Dios ya va delante.'
+        }
+      ]
+    };
+
+    /* ============================================================
+       BANCO DE REFLEXIONES — se asignan según el índice del versículo
+       del día para mantener coherencia sin requerir otra llamada a la API.
+    ============================================================ */
+    const REFLECTIONS = [
+      'Hoy es un nuevo regalo; vívelo con la certeza de que eres amado por Dios.',
+      'La fe no mueve montañas porque las ignora — las mueve porque confía en Quien las hizo.',
+      'Cada escritura que guardas en tu corazón es una luz que ninguna oscuridad puede apagar.',
+      'El amor de Dios no te alcanza según tu mérito; te alcanza según su gracia.',
+      'Una oración sincera abre más puertas que todas las estrategias del mundo.',
+      'No estás solo en tu camino; el mismo Dios que creó el universo camina contigo hoy.',
+      'La paz que supera todo entendimiento solo se encuentra en la presencia de Dios.',
+      'Confiar en Dios no es rendirse — es reconocer que Él tiene el mapa completo.',
+      'Tu historia no termina en el dolor; Dios siempre escribe un siguiente capítulo de redención.',
+      'La alabanza en medio de la tormenta es la fe más poderosa que puedes ejercitar.',
+      'Cada verso de la Biblia es una carta de amor escrita personalmente para ti.',
+      'Dios no te llama a la perfección; te llama a la dependencia de su gracia.',
+      'El perdón que recibes de Dios es el mismo que estás invitado a dar a otros.',
+      'En los momentos de silencio, Dios sigue hablando — solo necesitas quietud para escuchar.',
+      'La esperanza cristiana no es un deseo vago; es una certeza anclada en la resurrección.'
+    ];
+
+    /* ============================================================
+       OBTENER LA FECHA DE HOY como string legible y como clave
+    ============================================================ */
+    function getTodayKey() {
+      // Formato YYYY-MM-DD como clave única para localStorage
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function getReadableDate() {
+      // Fecha larga en español para mostrar en el encabezado
+      return new Date().toLocaleDateString('es-MX', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+
+    /* ============================================================
+       LISTA DE VERSÍCULOS A CONSULTAR — IDs de api.bible (NVI)
+       Se elige uno según el número del día del año para consistencia.
+       Puedes agregar o quitar IDs desde: https://scripture.api.bible/livedocs
+    ============================================================ */
+    const VERSE_IDS = [
+      'PHP.4.13', 'JER.29.11', 'PSA.23.1',  'ROM.8.28',  'ISA.40.31',
+      'MAT.11.28','JOS.1.9',   'PRO.3.5',   'PSA.46.10', 'JHN.3.16',
+      'PSA.121.2','ISA.41.10', 'PHP.4.6',   'ROM.15.13', 'HEB.11.1',
+      'PSA.27.1', 'MAT.6.33',  'ROM.8.38',  'GAL.5.22',  'EPH.2.8',
+      'COL.3.23', 'JHN.14.6',  '2TI.1.7',   'LAM.3.23',  'PSA.119.105',
+      'PRO.18.10','MAT.5.14',  '1COR.10.13','REV.21.4',  'MIC.6.8',
+      'PSA.37.4', 'EPH.3.20',  'HEB.13.5',  'JAM.1.17',  'MAT.28.20',
+      '2COR.5.17','PSA.91.1',  'LUK.1.37',  'GAL.2.20',  'JHN.10.10',
+      'ROM.5.8',  'PSA.139.14','1JHN.4.19', 'ISA.26.3',  'PRO.16.9',
+      '1COR.13.4','PSA.55.22', 'MAT.7.7',   'EPH.6.10',  'JHN.15.5'
+    ];
+
+    /* ============================================================
+       ELEGIR EL VERSÍCULO DEL DÍA
+       Se basa en el número de día del año para que cambie cada día
+       pero sea el mismo durante todo el día.
+    ============================================================ */
+    function getVerseIdForToday() {
+      const now   = new Date();
+      const start = new Date(now.getFullYear(), 0, 0);
+      const diff  = now - start;
+      const oneDay = 1000 * 60 * 60 * 24;
+      const dayOfYear = Math.floor(diff / oneDay);
+      return VERSE_IDS[dayOfYear % VERSE_IDS.length];
+    }
+
+    /* ============================================================
+       ELEGIR REFLEXIÓN — rotación basada en el día para consistencia
+    ============================================================ */
+    function getReflectionForToday() {
+      const now   = new Date();
+      const start = new Date(now.getFullYear(), 0, 0);
+      const diff  = now - start;
+      const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
+      return REFLECTIONS[dayOfYear % REFLECTIONS.length];
+    }
+
+    /* ============================================================
+       MOSTRAR EL VERSÍCULO EN EL DOM
+    ============================================================ */
+    function displayVerse(text, ref, reflection) {
+      document.getElementById('verseText').textContent = text;
+      document.getElementById('verseRef').textContent  = ref;
+      document.getElementById('reflection').textContent = reflection;
+
+      // Ocultar loader y mostrar contenido con animación
+      document.getElementById('loader').style.display      = 'none';
+      document.getElementById('errorMsg').style.display    = 'none';
+      document.getElementById('verseContent').style.display = 'block';
+      // Re-disparar la animación de entrada
+      const vc = document.getElementById('verseContent');
+      vc.style.animation = 'none';
+      void vc.offsetWidth; // reflow para reiniciar animación
+      vc.style.animation = '';
+    }
+
+    /* ============================================================
+       MOSTRAR ERROR
+    ============================================================ */
+    function displayError() {
+      document.getElementById('loader').style.display      = 'none';
+      document.getElementById('verseContent').style.display = 'none';
+      document.getElementById('errorMsg').style.display    = 'block';
+    }
+
+    /* ============================================================
+       LIMPIAR TEXTO DE LA API — eliminar etiquetas HTML y espacios extra
+    ============================================================ */
+    function cleanText(html) {
+      const div = document.createElement('div');
+      div.innerHTML = html;
+      return div.textContent.trim().replace(/\s+/g, ' ');
+    }
+
+    /* ============================================================
+       CARGAR VERSÍCULO DESDE API.BIBLE
+       Documentación: https://scripture.api.bible/livedocs
+       La API es gratuita con registro. Devuelve JSON.
+    ============================================================ */
+    async function fetchFromAPI(verseId) {
+      const url = `https://api.scripture.api.bible/v1/bibles/${CONFIG.bibleId}/verses/${verseId}?content-type=html&include-notes=false&include-titles=false&include-chapter-numbers=false&include-verse-numbers=false`;
+
+      const response = await fetch(url, {
+        headers: { 'api-key': CONFIG.apiKey }
+      });
+
+      if (!response.ok) throw new Error(`API error: ${response.status}`);
+
+      const json = await response.json();
+      const data = json.data;
+
+      // Construir texto y referencia
+      const text = cleanText(data.content);
+      // data.reference viene como "Filipenses 4:13" en el idioma de la Biblia elegida
+      const ref  = data.reference;
+
+      return { text, ref };
+    }
+
+    /* ============================================================
+       CARGAR VERSÍCULO DEL DÍA
+       1. Revisar LocalStorage — si ya existe para hoy, usarlo
+       2. Si no, consultar la API
+       3. Si falla la API, usar fallback local
+    ============================================================ */
+    async function loadDailyVerse() {
+      const today      = getTodayKey();
+      const storageKey = CONFIG.storageKey + today;
+      const reflection = getReflectionForToday();
+
+      // Mostrar loader
+      document.getElementById('loader').style.display      = 'flex';
+      document.getElementById('verseContent').style.display = 'none';
+      document.getElementById('errorMsg').style.display    = 'none';
+      document.getElementById('btnRefresh').disabled = true;
+
+      // ──── Paso 1: revisar caché de hoy en localStorage ────
+      try {
+        const cached = localStorage.getItem(storageKey);
+        if (cached) {
+          const { text, ref } = JSON.parse(cached);
+          displayVerse(text, ref, reflection);
+          document.getElementById('btnRefresh').disabled = false;
+          return;
+        }
+      } catch (_) {
+        // Si localStorage no está disponible (modo incógnito, iframe restrictivo), continuar
+      }
+
+      // ──── Paso 2: consultar la API ────
+      try {
+        const verseId = getVerseIdForToday();
+        const { text, ref } = await fetchFromAPI(verseId);
+
+        // Guardar en localStorage para el resto del día
+        try {
+          // Limpiar cachés de días anteriores (evitar acumulación)
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith(CONFIG.storageKey) && k !== storageKey) {
+              localStorage.removeItem(k);
+            }
+          }
+          localStorage.setItem(storageKey, JSON.stringify({ text, ref }));
+        } catch (_) {}
+
+        displayVerse(text, ref, reflection);
+
+      } catch (error) {
+        // ──── Paso 3: fallback con versículos locales ────
+        console.warn('API no disponible, usando versículo de respaldo.', error);
+
+        const now   = new Date();
+        const start = new Date(now.getFullYear(), 0, 0);
+        const dayOfYear = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+        const fallback  = CONFIG.fallback[dayOfYear % CONFIG.fallback.length];
+
+        displayVerse(fallback.text, fallback.ref, fallback.reflection);
+      }
+
+      document.getElementById('btnRefresh').disabled = false;
+    }
+
+    /* ============================================================
+       CARGAR UN VERSÍCULO NUEVO (botón "Otro versículo")
+       Elige uno aleatorio diferente al de hoy y lo muestra,
+       sin sobreescribir el caché del día.
+    ============================================================ */
+    async function loadNewVerse() {
+      const reflection = REFLECTIONS[Math.floor(Math.random() * REFLECTIONS.length)];
+
+      document.getElementById('loader').style.display      = 'flex';
+      document.getElementById('verseContent').style.display = 'none';
+      document.getElementById('errorMsg').style.display    = 'none';
+      document.getElementById('btnRefresh').disabled = true;
+
+      try {
+        // Elegir un versículo aleatorio diferente al del día
+        const todayIdx  = VERSE_IDS.indexOf(getVerseIdForToday());
+        let randIdx;
+        do { randIdx = Math.floor(Math.random() * VERSE_IDS.length); }
+        while (randIdx === todayIdx);
+
+        const { text, ref } = await fetchFromAPI(VERSE_IDS[randIdx]);
+        displayVerse(text, ref, reflection);
+
+      } catch (error) {
+        // Fallback aleatorio si la API falla
+        const fallback = CONFIG.fallback[Math.floor(Math.random() * CONFIG.fallback.length)];
+        displayVerse(fallback.text, fallback.ref, fallback.reflection);
+      }
+
+      document.getElementById('btnRefresh').disabled = false;
+    }
+
+    /* ============================================================
+       INICIALIZACIÓN — se ejecuta al cargar la página
+    ============================================================ */
+    document.addEventListener('DOMContentLoaded', () => {
+      // Mostrar la fecha de hoy formateada
+      const dateEl = document.getElementById('todayDate');
+      const date   = getReadableDate();
+      dateEl.textContent = date.charAt(0).toUpperCase() + date.slice(1);
+
+      // Cargar el versículo del día
+      loadDailyVerse();
+    });
+  </script>
+
+</body>
+</html>
